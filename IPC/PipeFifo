@@ -1,0 +1,78 @@
+### fifo
+#### first step: mkfifo jtfifo  
+#### second step: reader.cpp  
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <assert.h>
+#include <fcntl.h>
+
+int main()
+{
+    int fd = open("jtfifo",O_RDONLY);
+    assert(fd != -1);
+    printf("fd = %d\n",fd);
+
+    char buff[128] = {0};
+//  while(1)
+//  {
+//      int n = read(fd,buff,127);//127是期望要读的字符个数
+
+//      if(strncmp(buff,"end",3)==0)
+//      {
+//          break;
+//      }
+//      printf("read:%s\n",buff);
+//      printf("n = %d\n",n);
+//  }
+    int n = 0;
+    while((n = read(fd,buff,127))>0)
+    {
+        printf("read:(n = %d)%s\n",n,buff);
+        //将buff中的数据清空
+        memset(buff,0,128);
+    }
+    close(fd);
+    exit(0);
+}
+
+#### step3:writer.cpp
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <assert.h>
+#include <fcntl.h>
+#include <signal.h>
+
+//信号处理函数。
+void fun(int sig)
+{
+    printf("sig == %d\n",sig);
+}
+
+int main()
+{
+    signal(SIGPIPE,fun);
+    int fd = open("jtfifo",O_WRONLY);
+ // int fd = open("jtfifo",O_RDWR);
+
+    assert(fd != -1);
+    printf("fd = %d\n",fd);
+
+    char buff[128] = {0};
+    while(1)
+    {
+        printf("input:\n");
+        fgets(buff,128,stdin);
+        write(fd,buff,strlen(buff));
+
+        if(strncmp(buff,"end",3)==0)
+        {
+            break;
+        }
+    }
+    close(fd);
+    exit(0);
+}
